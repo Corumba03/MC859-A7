@@ -1,0 +1,3 @@
+[submodule "libs/pyvrp"]
+	path = libs/pyvrp
+	url = https://github.com/PyVRP/PyVRP.git
