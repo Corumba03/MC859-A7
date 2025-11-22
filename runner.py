@@ -9,6 +9,7 @@ from pyvrp import read, RandomNumberGenerator
 from utils import run_pyvrp
 from heuristics import insertion
 from heuristics import route_first_cluster_second
+from heuristics import savings
 
 # Utility function
 def _run_single_execution(instance_path: str, constructive_heuristic: function, seed: int, time_limit: int, target_value):

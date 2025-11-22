@@ -162,3 +162,123 @@ def route_first_cluster_second(instance_path: str) -> Solution:
         routes = routes[: max_vehicles - 1] + [merged]
 
     return Solution(data, routes)
+
+def savings(instance_path: str) -> Solution:
+    """
+    Representação:
+      - clientes são índices 0..n_clients-1 (como em data.clients()).
+      - cada rota é uma lista de clientes (depósito é implícito).
+
+    Passos:
+      1. Cria uma rota para cada cliente: [i].
+      2. Calcula os savings s_ij = c(0,i) + c(0,j) - c(i,j).
+      3. Ordena os pares (i,j) por saving decrescente.
+      4. Percorre essa lista tentando unir rotas em que i e j estejam nas extremidades
+         e a soma das demandas caiba na capacidade.
+    """
+    data, depot_coord, client_coords, client_demands, capacity = basic_data(
+        instance_path
+    )
+    num_clients = len(client_coords)
+
+    # 1) Pré-cálculo de distâncias: depósito–cliente e cliente–cliente
+    d0 = [
+        _euclidean(depot_coord, client_coords[i]) for i in range(num_clients)
+    ]
+
+    d_cc = [[0.0] * num_clients for _ in range(num_clients)]
+    for i in range(num_clients):
+        for j in range(i + 1, num_clients):
+            dij = _euclidean(client_coords[i], client_coords[j])
+            d_cc[i][j] = d_cc[j][i] = dij
+
+    # 2) Savings s_ij = c(0,i) + c(0,j) - c(i,j), i < j
+    savings_list: List[tuple[float, int, int]] = []
+    for i in range(num_clients):
+        for j in range(i + 1, num_clients):
+            s_ij = d0[i] + d0[j] - d_cc[i][j]
+            savings_list.append((s_ij, i, j))
+
+    # Ordena savings em ordem decrescente
+    savings_list.sort(key=lambda x: x[0], reverse=True)
+
+    # 3) Rotas iniciais: uma rota por cliente
+    routes: List[List[int]] = [[i] for i in range(num_clients)]
+    route_loads: List[float] = [client_demands[i] for i in range(num_clients)]
+
+    # client_route[c] = índice da rota em que o cliente c está
+    client_route: List[int] = list(range(num_clients))
+
+    # Checagem: demanda de cliente não pode ser maior que capacidade
+    for c, dem in enumerate(client_demands):
+        if dem > capacity:
+            raise ValueError(
+                f"Cliente {c} tem demanda {dem} maior que capacidade {capacity}."
+            )
+
+    # 4) Laço principal de união de rotas
+    for s_ij, i, j in savings_list:
+        ri = client_route[i]
+        rj = client_route[j]
+
+        # já estão na mesma rota -> não faz nada
+        if ri == rj:
+            continue
+
+        route_i = routes[ri]
+        route_j = routes[rj]
+
+        # rota já foi esvaziada em merge anterior
+        if not route_i or not route_j:
+            continue
+
+        load_i = route_loads[ri]
+        load_j = route_loads[rj]
+
+        # capacidade não pode estourar
+        if load_i + load_j > capacity:
+            continue
+
+        # i e j precisam estar nas extremidades de suas rotas
+        i_first = (route_i[0] == i)
+        i_last = (route_i[-1] == i)
+        j_first = (route_j[0] == j)
+        j_last = (route_j[-1] == j)
+
+        if not ((i_first or i_last) and (j_first or j_last)):
+            # um deles está "no meio" da rota -> não unimos
+            continue
+
+        # Decide orientação para juntar as rotas, garantindo que i e j fiquem adjacentes na rota resultante.
+        if i_last and j_first:
+            new_route = route_i + route_j
+        elif i_first and j_last:
+            new_route = route_j + route_i
+        elif i_first and j_first:
+            new_route = list(reversed(route_i)) + route_j
+        elif i_last and j_last:
+            new_route = route_i + list(reversed(route_j))
+        else:
+            continue
+
+        # merge: ri recebe a rota unida, rj é esvaziada
+        routes[ri] = new_route
+        routes[rj] = []
+        route_loads[ri] = load_i + load_j
+        route_loads[rj] = 0
+
+        # Atualiza o mapeamento cliente -> rota
+        for c in route_j:
+            client_route[c] = ri
+
+    # 5) Limpa rotas vazias e ajusta número de veículos
+    final_routes = [r for r in routes if r]
+
+    max_vehicles = data.num_vehicles
+    if max_vehicles > 0 and len(final_routes) > max_vehicles:
+        merged: List[int] = []
+        for r in final_routes[max_vehicles - 1 :]:
+            merged.extend(r)
+        final_routes = final_routes[: max_vehicles - 1] + [merged]
+
+    return Solution(data, final_routes)
