@@ -1,0 +1,9 @@
+instance,insertion_cost,insertion_routes,rfcs_cost,rfcs_routes,savings_cost,savings_routes
+instance1.vrp,33224,31,32602,30,28885,28
+instance2.vrp,23793,19,23543,19,21279,19
+instance3.vrp,27297,21,28665,22,23598,21
+instance4.vrp,75385,31,75573,31,68256,29
+instance5.vrp,74146,39,74483,39,71594,39
+instance6.vrp,70595,66,71046,65,62484,63
+instance7.vrp,93370,46,95431,46,85152,44
+instance8.vrp,83930,40,85020,40,76900,40

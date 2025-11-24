@@ -10,6 +10,9 @@ def _euclidean(p1: tuple[float, float], p2: tuple[float, float]) -> float:
     dy = p1[1] - p2[1]
     return math.hypot(dx, dy)
 
+def _to_pyvrp_routes(routes: List[List[int]]) -> List[List[int]]:
+    return [[c + 1 for c in route] for route in routes]
+
 
 def basic_data(instance_path: str):
     """
@@ -102,8 +105,9 @@ def insertion(instance_path: str) -> Solution:
 
     if current_route:
         routes.append(current_route)
-
-    return Solution(data, routes)
+        
+    pyvrp_routes = _to_pyvrp_routes(routes)
+    return Solution(data, pyvrp_routes)
 
 def route_first_cluster_second(instance_path: str) -> Solution:
     """
@@ -160,8 +164,9 @@ def route_first_cluster_second(instance_path: str) -> Solution:
         for r in routes[max_vehicles - 1:]:
             merged.extend(r)
         routes = routes[: max_vehicles - 1] + [merged]
-
-    return Solution(data, routes)
+        
+    pyvrp_routes = _to_pyvrp_routes(routes)
+    return Solution(data, pyvrp_routes)
 
 def savings(instance_path: str) -> Solution:
     """
@@ -281,4 +286,5 @@ def savings(instance_path: str) -> Solution:
             merged.extend(r)
         final_routes = final_routes[: max_vehicles - 1] + [merged]
 
-    return Solution(data, final_routes)
+    pyvrp_routes = _to_pyvrp_routes(final_routes)
+    return Solution(data, pyvrp_routes)
